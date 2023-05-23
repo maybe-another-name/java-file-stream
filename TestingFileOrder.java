@@ -10,16 +10,56 @@ import java.util.stream.Stream;
 
 class TestingFileOrder {
 
-  private static final String SAMPLE_FILE_NAME = "sample_file.csv";
-  private static final int NUMBER_OF_RECORDS = 1_000_000;
+  static final String SAMPLE_FILE_NAME = "sample_file.csv";
+  static final int NUMBER_OF_RECORDS = 100_000;
 
   public static void main(String[] args) throws IOException {
     System.out.println("Babaganoush");
-    generateSampleFile();
+    Path path = Paths.get(SAMPLE_FILE_NAME);
+    generateSampleFile(path);
+    readSampleFile(path);
+
+    // testingSideEffects();
   }
 
-  static void generateSampleFile() throws IOException {
-    Path path = Paths.get(SAMPLE_FILE_NAME);
+  static void testingSideEffects() {
+    List<Integer> matched = new ArrayList<>();
+    List<Integer> elements = new ArrayList<>();
+
+    for (int i = 0; i < 10000; i++) {
+      elements.add(i);
+    }
+
+    elements.stream() // undeterministic with parallel stream
+        .forEach(e -> {
+          if (e >= 100) {
+            matched.add(e);
+          }
+        });
+    System.out.println(matched.size());
+  }
+
+  static void readSampleFile(Path path) throws IOException {
+    List<String> reads = new ArrayList<>();
+    try (Stream<String> lines = Files.lines(path)) {
+      lines.forEachOrdered(line -> reads.add(line)); // with parallel, it breaks
+    }
+    System.out.println("Finished reading file");
+    // by default, it looks ordered
+
+    System.out.println(reads.size());
+
+    // System.out.println(reads);
+
+    // check individual records
+    // for (int i = 0; i < NUMBER_OF_RECORDS; i++) {
+    // String readAtI = reads.get(i);
+    // String writeAtI = writes.get(i);
+    // System.out.println("check @" + i + " = " + readAtI.equals(writeAtI));
+    // }
+  }
+
+  static List<String> generateSampleFile(Path path) throws IOException {
     Files.deleteIfExists(path);
     Files.createFile(path);
     List<String> writes = new ArrayList<>();
@@ -44,27 +84,8 @@ class TestingFileOrder {
     }
     writer.close();
     System.out.println("Finished writing file");
-
-    List<String> reads = new ArrayList<>();
-    try (Stream<String> lines = Files.lines(path)) {
-      lines.forEach(line -> reads.add(line)); // with parallel, it breaks
-    }
-    System.out.println("Finished reading file");
-    // by default, it looks ordered
-
-    System.out.println(reads.size());
     System.out.println(writes.size());
-
-    // System.out.println(reads);
-
-    // check individual records
-    // for (int i = 0; i < NUMBER_OF_RECORDS; i++) {
-    // String readAtI = reads.get(i);
-    // String writeAtI = writes.get(i);
-    // System.out.println("check @" + i + " = " + readAtI.equals(writeAtI));
-    // }
-
-    System.out.println(reads.equals(writes));
+    return writes;
   }
 
 }
