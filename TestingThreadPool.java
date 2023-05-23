@@ -1,3 +1,5 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,15 +36,22 @@ public class TestingThreadPool {
   static List<String> doSomethingThreads(Path path) throws IOException {
     List<String> reads = Collections.synchronizedList(new ArrayList<>());
 
+    String outputFileName = "output.csv";
+    Path outPath = Paths.get(outputFileName);
+    Files.deleteIfExists(outPath);
+    Files.createFile(outPath);
+    BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
+
     ExecutorService threadPoolForStream = Executors.newCachedThreadPool();
 
     try (Stream<String> lines = Files.lines(path)) {
       lines.forEach(line -> {
-        TestingThreadPool.ThreadedRunner runner = new ThreadedRunner(line, reads);
+        TestingThreadPool.ThreadedRunner runner = new ThreadedRunner(line, reads, writer);
         threadPoolForStream.submit(runner);
       });
     }
     threadPoolForStream.shutdown();
+    writer.flush();
 
     System.out.println("Finished reading file");
 
@@ -59,7 +68,7 @@ public class TestingThreadPool {
     try (Stream<String> lines = Files.lines(path)) {
       threadPoolForStream.submit(
           () -> lines.forEach(line -> {
-            reads.add(line);
+            // reads.add(line);
             System.out.println("reading file");
           }));
     }
@@ -75,15 +84,23 @@ public class TestingThreadPool {
 
     private String line;
     private List<String> reads;
+    BufferedWriter writer;
 
-    public ThreadedRunner(String line, List<String> reads) {
+    public ThreadedRunner(String line, List<String> reads, BufferedWriter writer) {
       this.line = line;
       this.reads = reads;
+      this.writer = writer;
     }
 
     @Override
     public void run() {
-      reads.add(line);
+      // reads.add(line);
+      try {
+        writer.write(line + "\n");
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
     }
 
   }

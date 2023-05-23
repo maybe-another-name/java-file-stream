@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 class TestingFileOrder {
 
   static final String SAMPLE_FILE_NAME = "sample_file.csv";
-  static final int NUMBER_OF_RECORDS = 100_000;
+  static final int NUMBER_OF_RECORDS = 1_000_000;
 
   public static void main(String[] args) throws IOException {
     System.out.println("Babaganoush");
@@ -80,7 +80,7 @@ class TestingFileOrder {
       // System.out.println("\t"+lineContents);
 
       writer.write(lineContents);
-      writes.add(lineContents.trim());
+      // writes.add(lineContents.trim());
     }
     writer.close();
     System.out.println("Finished writing file");
